@@ -123,7 +123,7 @@ save "ENSO-participant-density-EGOAGG-12.dta",replace
 set seed 20210728
 forvalues x=5/12 {
 	qui postutil clear
-	qui postfile buffer b1density_12 b1density_rd density_12 density_rd efctsize_12 efctsize_rd using mcs, replace //creates a place in memory called buffer in which I can store the results that will eventually be written out to a dataset. mhat is the name of the variable that will hold the estimates in the new dataset called mcs.dta. 
+	qui postfile buffer b1density_12 b1density_rd density_12 density_rd efctsize_12 efctsize_rd efctsize_std_12 efctsize_std_rd using mcs, replace //creates a place in memory called buffer in which I can store the results that will eventually be written out to a dataset. mhat is the name of the variable that will hold the estimates in the new dataset called mcs.dta. 
 
 forvalues i=1/1000 {
 	
@@ -238,8 +238,14 @@ forvalues i=1/1000 {
 	qui local d_rd = r(mu_2)
 	
 	qui ttest efctsize_12=efctsize_rd
+	qui local e_12 = r(mu_1)
+	qui local e_rd = r(mu_2)
 	
-    qui post buffer (`b1d_12') (`b1d_rd') (`d_12') (`d_rd') (r(mu_1)) (r(mu_2)) //stores the estimated mean for the current draw in buffer for what will be the next observation on mhat.
+	qui gen efctsize_std_12 = efctsize_12/netsize_12
+	qui gen efctsize_std_rd = efctsize_rd/netsize_12
+	qui ttest efctsize_std_12=efctsize_std_rd
+	
+    qui post buffer (`b1d_12') (`b1d_rd') (`d_12') (`d_rd') (`e_12') (`e_rd') (r(mu_1)) (r(mu_2)) //stores the estimated mean for the current draw in buffer for what will be the next observation on mhat.
 }
 postclose buffer //writes the stuff stored in buffer to the file mcs.dta
 use mcs, clear
@@ -250,12 +256,10 @@ display "Randomly selected:" `x'
 ttest b1density_12=b1density_rd 
 ttest density_12=density_rd 
 ttest efctsize_12=efctsize_rd 
+ttest efctsize_std_12=efctsize_std_rd
 }
 
-***************************************************************
-**# 4 Figures (N=54)
-***************************************************************
-
+*append data
 cd "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Data"
 use "All_random_12_5",clear
 foreach i of numlist 6/12 {
@@ -264,25 +268,41 @@ foreach i of numlist 6/12 {
 save "Analysis_SNAD_12",replace
 
 
-/*b1density*/
-tempfile e_b1d e_d e_e b_b1d b_d b_e
 
-use "Analysis_SNAD_12",clear
+***************************************************************
+**# 4 Figures (N=54)
+***************************************************************
+
+
+/*b1density*/
+
+use "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Data\Analysis_SNAD_12",clear
+tempfile e_b1d e_d e_e e_estd b_b1d b_d b_e b_estd
 
 *Plot acceptable error
 label var n "# alters randomly selected"
+bysort n: egen p95_b1density=pctile(abs(b1density_12-b1density_rd)),p(95)
+label var p95_b1density "Density error"
+gen p95_b1density_round = round(p95_b1density,0.001)
+twoway (connected p95_b1density n, mlab(p95_b1density_round) mlabposition(12) xlab(5 (1)12)), saving(`e_b1d') 
+*graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\b1density-error-p95-ap.tif",replace
+
+/*
 bysort n: egen error_2=count(n) if abs(b1density_12-b1density_rd) <= 5/100 
 label var error_2 "Error<5% ties"
 bysort n: egen error_1=count(n) if abs(b1density_12-b1density_rd) <= 2/100
 label var error_1 "Error<1% ties"
 twoway (connected error_2 n,mlab(error_2) mlabposition(12)) (connected error_1 n,mlab(error_1) mlabposition(12)),title("Density: # random samples in 1000 trails that have acceptable error") legend(order(1 "Error<5 ties" "in 100 ties" 2 "Error<2 ties" "in 100 ties")) saving(`e_b1d')  
 graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\b1density-error.tif",replace
+*/
 
 *boxcox plot
-label var b1density_rd "Density"
-graph box b1density_rd, over(n) box(1, color(gray%70)) yline(0.4494,lcolor(red)) ///
+gen error_b1density = b1density_rd-b1density_12
+label var error_b1density "Density error"
+
+graph box error_b1density, over(n) box(1, color(gray%70)) yline(0,lcolor(red)) ///
 b1title("# randomly selected alters") saving(`b_b1d')
-graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\b1density.tif",replace
+*graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\b1density.tif",replace
    
    
 /*density*/
@@ -291,18 +311,19 @@ use "Analysis_SNAD_12",clear
 
 *Plot acceptable error
 label var n "# alters randomly selected"
-bysort n: egen error_2=count(n) if abs(density_12-density_rd) <= 10/100 
-label var error_2 "Error<0.05"
-bysort n: egen error_1=count(n) if abs(density_12-density_rd) <= 5/100
-label var error_1 "Error<0.01"
-twoway (connected error_2 n,mlab(error_2) mlabposition(12)) (connected error_1 n,mlab(error_1) mlabposition(12)),title("Value density: # random samples in 1000 trails that have acceptable error") legend(order(1 "Error<0.1" "out of 0-3" 2 "Error<0.05" "out of 0-3")) saving(`e_d')
-graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\density-error.tif",replace
+bysort n: egen p95_density=pctile(abs(density_12-density_rd)),p(95)
+label var p95_density "Value Density error"
+gen p95_density_round = round(p95_density,0.001)
+twoway (connected p95_density n, mlab(p95_density_round) mlabposition(12) xlab(5 (1)12)), saving(`e_d')
+*graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\density-error-p95-ap.tif",replace
 
 *boxcox plot
-label var density_rd "Value Density"
-graph box density_rd, over(n) box(1, color(gray%70)) yline(0.8617,lcolor(red)) ///
+gen error_density = density_rd-density_12
+label var error_density "Value Density error"
+
+graph box error_density, over(n) box(1, color(gray%70)) yline(0,lcolor(red)) ///
 b1title("# randomly selected alters") saving(`b_d')
-graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\density.tif",replace
+*graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\density.tif",replace
 
    
 /*effective size*/
@@ -312,26 +333,48 @@ use "Analysis_SNAD_12",clear
 
 *Plot acceptable error
 label var n "# alters randomly selected"
-bysort n: egen error_2=count(n) if abs(efctsize_12-efctsize_rd) <= 1 
-label var error_2 "Error<1"
-bysort n: egen error_1=count(n) if abs(efctsize_12-efctsize_rd) <= 0.5
-label var error_1 "Error<0.5"
-twoway (connected error_2 n,mlab(error_2) mlabposition(12)) (connected error_1 n,mlab(error_1) mlabposition(12)),title("Effective size: # random samples in 1000 trails that have acceptable error") legend(order(1 "Error<1" 2 "Error<0.5")) saving(`e_e')
-graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\efctsize-error.tif",replace
+bysort n: egen p95_efctsize=pctile(abs(efctsize_12-efctsize_rd)),p(95)
+label var p95_efctsize "Effective Size error"
+gen p95_efctsize_round = round(p95_efctsize,0.01)
+twoway (connected p95_efctsize n, mlab(p95_efctsize_round) mlabposition(12) xlab(5 (1)12)), saving(`e_e')
+*graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\efctsize-error-p95-ap.tif",replace
 
 *boxcox plot
-label var efctsize_rd "Effective Size"
-graph box efctsize_rd, over(n) box(1, color(gray%70)) yline(11.522,lcolor(red)) ///
-b1title("# randomly selected alters") saving(`b_e')
-graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\efctsize.tif",replace
+gen error_efctsize = efctsize_rd-efctsize_12
+label var error_efctsize "Effective Size error"
 
-graph combine "`e_b1d'" "`e_d'" "`e_e'", title("# random samples in 1000 trails that have acceptable error")
-*graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\All-Error.tif", replace
- 
-graph combine "`b_b1d'" "`b_d'" "`b_e'"
-graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\All-boxcox.tif", replace
+graph box error_efctsize, over(n) box(1, color(gray%70)) yline(0,lcolor(red)) ///
+b1title("# randomly selected alters") saving(`b_e')
+*graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\efctsize.tif",replace
 
 	 
+/*effective size (standardized by netsize)*/
+use "Analysis_SNAD_12",clear
+
+*Plot acceptable error
+label var n "# alters randomly selected"
+bysort n: egen p95_efctsize_std=pctile(abs(efctsize_std_12-efctsize_std_rd)),p(95)
+label var p95_efctsize_std "Effective Size (std) error "
+gen p95_efctsize_std_round = round(p95_efctsize_std,0.001)
+twoway (connected p95_efctsize_std n, mlab(p95_efctsize_std_round) mlabposition(12) xlab(5 (1)12)), saving(`e_estd')
+*graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\efctsize-error-p95-ap.tif",replace
+
+*boxcox plot
+gen error_efctsize_std = efctsize_std_rd-efctsize_std_12
+label var error_efctsize_std "Effective Size (std) error"
+
+graph box error_efctsize_std, over(n) box(1, color(gray%70)) yline(0,lcolor(red)) b1title("# randomly selected alters") saving(`b_estd')
+*graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\efctsize.tif",replace
+	 
+
+graph combine "`e_b1d'" "`e_d'" "`e_e'" "`e_estd'", title("Max error for 95% of random samples in 1000 trails")
+graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\All-Error.tif", replace
+ 
+graph combine "`b_b1d'" "`b_d'" "`b_e'" "`b_estd'"
+graph export "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization\Results\All-boxcox.tif", replace
+
+
+
 /*histogram of netsize*/
 
 

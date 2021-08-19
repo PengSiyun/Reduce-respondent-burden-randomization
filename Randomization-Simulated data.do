@@ -8,7 +8,7 @@
 ***************************************************************
 **# 1 Generate network data
 ***************************************************************
-cd "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization-alter-alter ties\Data\temp"
+cd "/N/u/siypeng/Carbonate/Random ties/temp"
     * generate ego level data	
 set seed 20210731
 forvalues y=10(5)100 {
@@ -49,9 +49,9 @@ save "simulation_`y'",replace
 }
 	
 ***************************************************************
-**# 2 Simulation of random selection (stopped here)
+**# 2 Simulation of random selection 
 ***************************************************************
-qui cd "C:\Users\bluep\Dropbox\peng\Academia\Work with Brea\SNAD\SNAD data\Peng\Randomization-alter-alter ties\Data\temp"
+qui cd "/N/u/siypeng/Carbonate/Random ties/temp"
 
 set seed 20210731
 forvalues y=10(5)100 {
@@ -101,7 +101,8 @@ forvalues i=1/1000 {
 }
 postclose buffer //writes the stuff stored in buffer to the file mcs.dta
 use mcs, clear
-gen n = `x'
+gen rd = `x'
+gen n = `y'
 save "random_`y'_`x'",replace
 display "Randomly selected:" `x'
 *hist mhat_rd, percent xline(0.475,lwidth(1pt) lcolor(red)) color(gray%50)
@@ -111,4 +112,85 @@ ttest efctsize_full=efctsize_rd
 }
 	
 	
+*append data by randomly chose alter size
+cd "/N/u/siypeng/Carbonate/Random ties/temp"
+foreach x of numlist 5/12 {
+    use "random_10_`x'",clear
+
+    forvalues y=15(5)100 {
+    append using "random_`y'_`x'"
+}
+save "Analysis_Sim_`x'",replace
+}
+
+*append all together
+use "Analysis_Sim_5",clear
+forvalues x=6/12 {
+    append using "Analysis_Sim_`x'"
+}
+replace efctsize_rd=efctsize_full if rd > n //correct the proportion when rd>n
+save "/N/u/siypeng/Carbonate/Random ties/clean data/Analysis_Sim_all",replace
 	
+***************************************************************
+**# 3 Figures 
+***************************************************************
+
+
+/*b1density*/
+use "/N/u/siypeng/Carbonate/Random ties/clean data/Analysis_Sim_all",clear
+
+*Plot 5% error 
+label var n "Network size"
+bysort rd n: egen p95_density=pctile(abs(b1density_full-b1density_rd)),p(95)
+label var p95_density "5% Density error"
+
+twoway (connected p95_density n, yline(950) xlab(10(10)100,angle(45)) ylab(,angle(h))),by(rd,note("")) 
+graph export "/N/u/siypeng/Carbonate/Random ties/results/b1density-error-p95.tif",replace
+
+*boxcox plot
+gen error = b1density_rd-b1density_full
+label var error "Density error"
+graph box error, over(n,lab(nolab)) over(rd) box(1, color(gray%70)) yline(0,lcolor(red)) 
+graph export "/N/u/siypeng/Carbonate/Random ties/results/b1density-boxplot.tif",replace
+
+
+
+
+/*effective size*/
+use "/N/u/siypeng/Carbonate/Random ties/clean data/Analysis_Sim_all",clear
+
+*Plot 5% error
+label var n "Network size"
+bysort rd n: egen p95_efctsize=pctile(abs(efctsize_full-efctsize_rd)),p(95)
+label var p95_efctsize "5% Effective Size error"
+
+twoway (connected p95_efctsize n, yline(950) xlab(10(10)100,angle(45)) ylab(,angle(h))),by(rd,note("")) 
+graph export "/N/u/siypeng/Carbonate/Random ties/results/efctsize-error-p95.tif",replace
+
+*boxcox plot
+gen error_efctsize = efctsize_rd-efctsize_full
+label var error_efctsize "Effective size error"
+graph box error_efctsize, over(n,lab(nolab)) over(rd) box(1, color(gray%70)) yline(0,lcolor(red)) 
+graph export "/N/u/siypeng/Carbonate/Random ties/results/efctsize-boxplot.tif",replace
+
+
+/*effective size (standardized by netsize)*/
+use "/N/u/siypeng/Carbonate/Random ties/clean data/Analysis_Sim_all",clear
+gen efctsize_std_full = efctsize_full/n
+gen efctsize_std_rd = efctsize_rd/n 
+
+*Plot 5% error
+label var n "Network size"
+bysort rd n: egen p95_efctsize_std=pctile(abs(efctsize_std_full-efctsize_std_rd)),p(95)
+label var p95_efctsize_std "5% Effective Size (std) error"
+
+twoway (connected p95_efctsize_std n, yline(950) xlab(10(10)100,angle(45)) ylab(,angle(h))),by(rd,note("")) 
+graph export "/N/u/siypeng/Carbonate/Random ties/results/efctsize-std-error-p95.tif",replace
+
+*boxcox plot
+gen error_efctsize_std = efctsize_std_rd-efctsize_std_full
+label var error_efctsize_std "Effective size (std) error"
+graph box error_efctsize_std, over(n,lab(nolab)) over(rd) box(1, color(gray%70)) yline(0,lcolor(red))
+graph export "/N/u/siypeng/Carbonate/Random ties/results/efctsize-std-boxplot.tif",replace
+
+	 
