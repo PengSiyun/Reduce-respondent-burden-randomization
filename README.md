@@ -1,4 +1,4 @@
-![](Image/Figure.jpg)
+![](Image/simulate-varied.tif)
 
 Fig. Predicted values for depressive symptoms and predicted probabilities for activity limitations across the range of proportion of adult children with a bachelor's degree or higher. Distribution of respondents are indicated in red on the x-axis. The shaded regions indicate 95% confidence intervals.
 
