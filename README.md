@@ -1,21 +1,23 @@
 ![](Image/simulate-varied.jpg)
 
-Fig. Predicted values for depressive symptoms and predicted probabilities for activity limitations across the range of proportion of adult children with a bachelor's degree or higher. Distribution of respondents are indicated in red on the x-axis. The shaded regions indicate 95% confidence intervals.
+Fig. 3. Mean MAE and mean correlation for random sampling by average network size (Simulation study). Note: MAE = mean absolute error. Corr = correlation. Average network size ranged from 10 to 50 with an interval of 5. # randomly selected alters ranged from 6 to 20 with an interval of 2. Mean correlation and mean MAE were average scores for 1000 random samples per network size and number of alters selected.
 
-Journal: SSM-Population Health
+Journal: Social Networks
 
 URL: https://www.sciencedirect.com/science/article/pii/S2352827318303793
 
-Titile: Older mother's health and adult children's education: Conceptualization of adult children's education and mother-child relationships
+Titile: Random sampling of alters from networks: A promising direction in egocentric network research
 
-Abstract:This study joins and extends an emerging body of work examining the association between adult children's education and their parents' health by (1) providing a conceptual treatment of adult children's education, (2) examining the link between adult children's education and older mothers' physical and mental health, and (3) investigating whether mother-child relationships moderate the association between children's education and mothers' health. Data on 541 older mothers in the U.S. who reported on all of their adult children collected as part of the Within-Family Differences Study. Results indicate the best performing measure of adult children's education, the proportion with a college degree or higher, reflects a cumulative, credential-based approach. In addition, the proportion of adult children with a college degree or higher maintains a negative association with mother's depressive symptoms and activity limitations net of mother's own education as well as a number of sociodemographic factors and adult children's measures. There was no evidence that various aspects of mother-child relationships (geographic proximity, frequency of contact, and quality of relationships) moderated these negative associations.
+Abstract:The social network perspective has great potential for advancing knowledge of social mechanisms in many fields. However, collecting egocentric (i.e., personal) network data is costly and places a heavy burden on respondents. This is especially true of the task used to elicit information on ties between network members (i.e., alter-alter ties or density matrix), which grows exponentially in length as network size increases. While most existing national surveys circumvent this problem by capping the number of network members that can be named, this strategy has major limitations. Here, we apply random sampling of network members to reduce cost, respondent burden, and error in network studies. We examine the effectiveness and reliability of random sampling in simulated and real-world egocentric network data. We find that in estimating sample/population means of network measures, randomly selecting a small number of network members produces only minor errors, regardless of true network size. For studies that use network measures in regressions, randomly selecting the mean number of network members (e.g., randomly selecting 10 alters when mean network size is 10) is enough to recover estimates of network measures that correlate close to 1 with those of the full sample. We conclude with recommendations for best practices that will make this versatile but resource intensive methodology accessible to a wider group of researchers without sacrificing data quality.
+
+
 
 # Instructions
-# For similation: 
+For similation: 
 Run "Randomization-Alter-Simulated data-varied" first, which produce results for proportion of often contact
 
 Then run "Randomization-Simulated data-varied", which produce results for density and produce combined figures for similation
-# For Real-world sample: 
+For Real-world sample: 
 Run "Randomization_SNAD"
-# For Figure of ties by network size (Figure 1)
+For Figure of ties by network size (Figure 1)
 Run "growth of ties by netsize"
