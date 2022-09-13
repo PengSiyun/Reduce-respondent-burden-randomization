@@ -4,7 +4,7 @@ Fig. 3. Mean MAE and mean correlation for random sampling by average network siz
 
 Journal: Social Networks
 
-URL: https://www.sciencedirect.com/science/article/pii/S2352827318303793
+URL: https://www.sciencedirect.com/science/article/pii/S0378873322000855?dgcid=author
 
 Titile: Random sampling of alters from networks: A promising direction in egocentric network research
 
@@ -17,7 +17,9 @@ For similation:
 Run "Randomization-Alter-Simulated data-varied" first, which produce results for proportion of often contact
 
 Then run "Randomization-Simulated data-varied", which produce results for density and produce combined figures for similation
+
 For Real-world sample: 
 Run "Randomization_SNAD"
+
 For Figure of ties by network size (Figure 1)
 Run "growth of ties by netsize"
